@@ -7,7 +7,9 @@ http = httplib2.Http()
 webpage='https://www.zillow.com/'+str(city)+'/1'+str(pages)+'/'
 status, response = http.request(webpage)
 response=response.decode('utf-8')
-
+while '<html><head><script src="https://www.google.com/recaptcha/api.js">' in response:
+            status, response = http.request(webpage)
+            response=response.decode('utf-8')
 #page
 regex_pp='<li class="zsg-pagination_active">(.+?)</a></li><li class="zsg-pagination-next">'
 pattern_pp = re.compile(regex_pp)
@@ -18,7 +20,11 @@ for p in [range(pp)[1:][0]]:
     webpage1='https://www.zillow.com/'+str(city)+'/'+str(p)+str(pages)+'/'
     status1, response1 = http.request(webpage1)
     response1=response1.decode('utf-8')
-    
+    while '<html><head><script src="https://www.google.com/recaptcha/api.js">' in response1:
+            #print ('web errors1')
+            status1, response1 = http.request(webpage1)
+            response1=response1.decode('utf-8')
+
     #coordinates
     regex_longs='<meta itemprop="longitude" content="(.+?)"></meta></span><div class="zsg-photo-card-caption">'
     pattern_longs = re.compile(regex_longs)
@@ -42,14 +48,19 @@ for p in [range(pp)[1:][0]]:
     lot=[]
     remodel=[]
     type1=[]
-    style=[]
+    family=[]
+    sstyle=[]
     lastsold=[]
-    for q in ID[1:5]:
+    for q in ID[:5]:
         http = httplib2.Http()
         webpage2='https://www.zillow.com'+str(q)
         status2, response2 = http.request(webpage2)
         response2=response2.decode('utf-8')
-        
+        while '<html><head><script src="https://www.google.com/recaptcha/api.js">' in response2:
+            #print ('web errors2')
+            status2, response2 = http.request(webpage2)
+            response2=response2.decode('utf-8')
+
         #address
         regex_add='<title>(.+?)</title>'
         pattern_add = re.compile(regex_add)
@@ -66,34 +77,42 @@ for p in [range(pp)[1:][0]]:
         baths.append(meta.split(' ')[meta.split(' ').index('bed,')+1:][0])
         floorsize.append(meta.split(' ')[meta.split(' ').index('bath,')+1:][0])
         builtin.append(meta.split(' ')[meta.split(' ').index('built')+2].replace('.',''))
-        style.append(' '.join(meta.split(' ')[meta.split(' ').index('sqft')+1:meta.split(' ').index('located')]))
+        family.append(' '.join(meta.split(' ')[meta.split(' ').index('sqft')+1:meta.split(' ').index('located')]))
         
         #Lot size
         regex_lot='<span class="hdp-fact-name">Lot: </span><span class="hdp-fact-value">(.+?)</span></li></ul></div>'
         pattern_lot = re.compile(regex_lot)
-        lot.append(int(re.findall(pattern_lot,response2)[0].replace(' sqft','').replace(',','')))
+        lot.append(re.findall(pattern_lot,response2)[0].replace(' sqft','').replace(' acres','').replace(',',''))
 
         #Last remodel year
         regex_remodel='<span class="hdp-fact-name">Last remodel year: </span><span class="hdp-fact-value">(.+?)</span></li><li class="">'
         pattern_remodel = re.compile(regex_remodel)
-        remodel.append(int(re.findall(pattern_remodel,response2)[0]))
+        rr=re.findall(pattern_remodel,response2)
+        if rr != []:
+            remodel.append(rr[0])
+        else:
+            remodel.append('')
 
         #Structure type
         regex_type1='<span class="hdp-fact-name">Structure type: </span><span class="hdp-fact-value">(.+?)</span></li><li class="">'
         pattern_type1 = re.compile(regex_type1)
-        type1.append(re.findall(pattern_type1,response2)[0])
+        type1.append(re.findall(pattern_type1,response2))
 
         #Structure style
         regex_style='<span class="hdp-fact-name">Structural Style: </span><span class="hdp-fact-value">(.+?)</span></li></ul></div>'
         pattern_style = re.compile(regex_style)
-        style.append(re.findall(pattern_style,response2)[0])
+        ss=re.findall(pattern_style,response2)
+        if ss != []:
+            sstyle.append(ss[0])
+        else:
+            sstyle.append('')
 
         #Last sold
         regex_lastsold='<span class="hdp-fact-name">Last sold: </span><span class="hdp-fact-value">(.+?)</span></li><li class="">'
         pattern_lastsold = re.compile(regex_lastsold)
-        lastsold.append(re.findall(pattern_lastsold,response2))
-        if lastsold != []:
-            lastsold.append(lastsold[0])
+        lastsold1=re.findall(pattern_lastsold,response2)
+        if lastsold1 != []:
+            lastsold.append(lastsold1[0])
         else:
             lastsold.append('')
 
